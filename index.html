@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f8f8fb" />
+  <meta name="description" content="Luma Planner — 週計畫、任務進度與專注管理，一個簡單而有條理的工作空間。" />
+  <title>Luma Planner · Plan your week</title>
+  <style>
+    :root{--bg:#f8f8fb;--surface:#fff;--surface-alt:#f6f5f9;--border:#e9e7ee;--ink:#292832;--muted:#817e8a;--lav:#9181b5;--lav-dark:#75629f;--lav-pale:#f0ebf8;--lav-tint:#eae5f5;--green:#348b73;--green-bg:#e8f5ef;--amber:#b0783f;--amber-bg:#fff4e8;--red:#bc6575;--red-bg:#fff0f2;--shadow:0 12px 40px rgba(44,34,66,.045);--radius:17px;--fast:.18s ease}
+    *{box-sizing:border-box}
+    html{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:var(--bg);font-size:14px;scroll-behavior:smooth}
+    body{margin:0;min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    button:disabled{opacity:.46;cursor:not-allowed}
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.task-card:focus-visible{outline:3px solid #b7a6dc;outline-offset:3px}
+    a{color:inherit;text-decoration:none}
+    .icon{width:18px;height:18px;flex-shrink:0;vertical-align:middle;display:inline-block}
+    .layout{display:grid;grid-template-columns:253px minmax(0,1fr);min-height:100vh}
+    .sidebar{background:#fff;border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:31px 18px 24px;z-index:20}
+    .brand{display:flex;align-items:center;gap:12px;padding:0 12px 35px}
+    .brand-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:14px;background:#e9e2f5;color:var(--lav-dark)}
+    .brand-mark svg{width:24px;height:24px}
+    .brand strong{display:block;letter-spacing:-.65px;font-size:18px;font-weight:750}
+    .brand small{color:var(--muted);font-size:11px;letter-spacing:.2px}
+    .nav-label{font-size:10px;letter-spacing:1.8px;color:#aaa6b2;font-weight:750;padding:0 15px;margin:6px 0 15px}
+    .nav{display:flex;flex-direction:column;gap:5px}
+    .nav-button{border:0;background:transparent;color:#736f7c;border-radius:11px;text-align:left;padding:12px 14px;display:flex;align-items:center;gap:13px;font-weight:570;width:100%;transition:background var(--fast),color var(--fast)}
+    .nav-button:hover{background:#f8f6fb;color:var(--ink)}
+    .nav-button.active{background:var(--lav-pale);color:var(--lav-dark);font-weight:750}
+    .nav-button .icon{width:19px;height:19px}
+    .sidebar-bottom{margin-top:auto;padding:16px 10px 0;border-top:1px solid var(--border)}
+    .sidebar-note{background:linear-gradient(135deg,#f5f1fa,#f9f8fc);border:1px solid #f0ebf6;border-radius:13px;padding:16px 14px;margin-bottom:13px}
+    .sidebar-note .mini-dot{height:7px;width:7px;background:var(--lav);border-radius:50%;display:inline-block;margin-right:6px}
+    .sidebar-note strong{font-size:12px}
+    .sidebar-note p{font-size:11px;color:var(--muted);line-height:1.7;margin:6px 0 0}
+    .sidebar-footer{color:#b2aeb9;font-size:11px;padding:6px 3px}
+    .main{min-width:0;position:relative}
+    .topbar{height:77px;padding:0 clamp(22px,4vw,68px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eeedf1;background:rgba(248,248,251,.91);backdrop-filter:blur(15px);position:sticky;top:0;z-index:15}
+    .breadcrumbs{color:var(--muted);font-size:12px;display:flex;gap:11px;align-items:center}
+    .breadcrumbs strong{color:#4a4555;font-weight:650}
+    .top-right{display:flex;align-items:center;gap:16px}
+    .top-date{font-size:12px;color:var(--muted)}
+    .avatar{width:35px;height:35px;border-radius:11px;background:var(--lav-pale);color:var(--lav-dark);font-weight:750;display:grid;place-items:center;border:1px solid #e4ddf1}
+    .content{max-width:1490px;margin:auto;padding:37px clamp(22px,4vw,68px) 70px}
+    .page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:26px}
+    .eyebrow{font-size:11px;letter-spacing:1.85px;text-transform:uppercase;color:var(--lav);font-weight:800;margin:0 0 9px}
+    h1{font-size:clamp(26px,3vw,33px);font-weight:740;letter-spacing:-1.1px;line-height:1.23;margin:0}
+    .subhead{color:var(--muted);margin:9px 0 0;font-size:13px;line-height:1.75}
+    h2{font-size:18px;letter-spacing:-.35px;margin:0;font-weight:720}
+    h3{font-size:15px;margin:0;font-weight:700}
+    .actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#fff;color:#564f60;border:1px solid #e3e0e9;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:675;line-height:1.2;min-height:38px;transition:all var(--fast);white-space:nowrap}
+    .btn .icon{width:16px;height:16px}
+    .btn:hover:not(:disabled){border-color:#c4b8d5;background:#faf8fd;transform:translateY(-1px)}
+    .btn.primary{background:var(--lav);border-color:var(--lav);color:white;box-shadow:0 4px 12px rgba(145,129,181,.13)}
+    .btn.primary:hover:not(:disabled){background:var(--lav-dark);border-color:var(--lav-dark)}
+    .btn.ghost{border-color:transparent;background:transparent}
+    .btn.danger{color:var(--red);border-color:#f0d7dd;background:#fff9fa}
+    .btn.small{min-height:31px;padding:7px 10px;font-size:11px;border-radius:8px}
+    .btn.icon-btn{padding:8px;min-width:36px}
+    .btn.wide{width:100%}
+    .stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin-bottom:24px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}
+    .stat{padding:22px 23px 20px;position:relative;overflow:hidden}
+    .stat-top{display:flex;align-items:center;justify-content:space-between;gap:9px}
+    .stat-label{color:var(--muted);font-size:12px;font-weight:610}
+    .stat-icon{width:35px;height:35px;border-radius:11px;background:#f2eef9;display:grid;place-items:center;color:var(--lav-dark)}
+    .stat-icon .icon{height:17px;width:17px}
+    .stat-value{font-size:31px;letter-spacing:-1.5px;font-weight:760;margin-top:12px;font-variant-numeric:tabular-nums}
+    .stat-foot{font-size:11px;color:#a09ca9;margin-top:5px}
+    .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:19px;align-items:start}
+    .section-card{padding:22px}
+    .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:19px}
+    .section-head .mini-link{color:var(--lav-dark);font-weight:650;font-size:11px;background:transparent;border:0;padding:5px}
+    .section-head .mini-link:hover{text-decoration:underline}
+    .chip{display:inline-flex;align-items:center;gap:5px;border-radius:50px;padding:5px 9px;font-size:10px;font-weight:710;background:#f2f0f5;color:#777080;white-space:nowrap}
+    .chip.lav{background:var(--lav-pale);color:var(--lav-dark)}
+    .chip.green{background:var(--green-bg);color:var(--green)}
+    .chip.amber{background:var(--amber-bg);color:var(--amber)}
+    .chip.red{background:var(--red-bg);color:var(--red)}
+    .task-list{display:flex;flex-direction:column;gap:9px}
+    .task-row{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #eeecf2;border-radius:12px;min-width:0;background:#fff;transition:border-color var(--fast),box-shadow var(--fast)}
+    .task-row:hover{border-color:#d8d0e7;box-shadow:0 3px 15px rgba(47,36,68,.04)}
+    .task-check{color:#c4bdce;background:transparent;padding:0;border:0;display:grid;place-items:center;width:25px;height:25px}
+    .task-check.complete{color:var(--green)}
+    .task-row-main{flex:1;min-width:0;cursor:pointer;background:none;border:none;text-align:left;padding:0;color:inherit}
+    .task-title{font-weight:675;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+    .task-title.done{text-decoration:line-through;color:#9a95a1}
+    .task-meta{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px}
+    .project-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;vertical-align:middle}
+    .row-right{display:flex;align-items:center;gap:9px;flex-shrink:0}
+    .mini-progress{width:54px;height:5px;border-radius:99px;background:#ece8f2;overflow:hidden}
+    .mini-progress>span{display:block;background:var(--lav);height:100%;border-radius:99px}
+    .progress-track{width:100%;height:8px;background:#ece8f4;border-radius:30px;overflow:hidden}
+    .progress-fill{height:100%;background:var(--lav);border-radius:30px;transition:width .24s ease}
+    .progress-row{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:9px;font-size:12px}
+    .progress-row .muted{color:var(--muted)}
+    .stack{display:flex;flex-direction:column;gap:18px}
+    .weekly-glance{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:end;gap:9px;min-height:112px;margin-top:18px}
+    .glance-day{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
+    .glance-track{height:80px;display:flex;align-items:flex-end;width:100%;max-width:27px;background:#f6f3fa;border-radius:7px;overflow:hidden}
+    .glance-bar{background:#b5a6d0;width:100%;min-height:2px;border-radius:7px;transition:height .3s}
+    .glance-day.today .glance-bar{background:var(--lav-dark)}
+    .glance-day-label{font-size:10px;color:var(--muted)}
+    .glance-day.today .glance-day-label{color:var(--lav-dark);font-weight:800}
+    .empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:35px 18px;gap:9px;color:var(--muted)}
+    .empty-icon{width:52px;height:52px;border-radius:17px;background:var(--lav-pale);color:var(--lav-dark);display:grid;place-items:center;margin-bottom:4px}
+    .empty strong{font-size:14px;color:var(--ink)}
+    .empty p{margin:0;line-height:1.7;font-size:12px;max-width:320px}
+    .week-control{display:flex;gap:6px;align-items:center}
+    .week-range{font-size:13px;font-weight:675;white-space:nowrap;margin:0 7px}
+    .week-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+    .week-board{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:10px;min-width:1090px}
+    .week-scroll{overflow:auto;padding-bottom:10px}
+    .day-column{background:#fff;border:1px solid var(--border);border-radius:14px;min-height:315px;padding:13px 10px;display:flex;flex-direction:column;gap:10px;transition:background var(--fast),border-color var(--fast)}
+    .day-column.today{border-color:#b8a4da;background:#fdfbff}
+    .day-column.drag-over{border-color:var(--lav);background:var(--lav-pale)}
+    .day-title{display:flex;align-items:center;justify-content:space-between}
+    .day-label{font-size:10px;color:var(--muted);font-weight:760;letter-spacing:.4px}
+    .day-date{margin-top:3px;font-size:22px;font-weight:740;letter-spacing:-1px}
+    .day-column.today .day-date{color:var(--lav-dark)}
+    .day-total{font-size:10px;color:var(--muted);padding:7px 0;border-top:1px solid var(--border);margin-top:auto;display:flex;justify-content:space-between}
+    .day-add{width:100%;padding:9px 6px;border:1px dashed #d8d0e2;border-radius:8px;background:none;color:#91849e;font-size:11px;display:flex;justify-content:center;gap:5px;align-items:center}
+    .day-add:hover{background:#f7f3fa}
+    .day-task{border:1px solid #eeeaf2;border-radius:10px;padding:10px 9px;background:#faf9fc;cursor:pointer;transition:border-color var(--fast)}
+    .day-task:hover{border-color:#bbadd2}
+    .day-task[draggable="true"]{cursor:grab}
+    .day-task-top{display:flex;justify-content:space-between;align-items:center;gap:5px}
+    .day-task .name{font-size:11px;font-weight:750;margin:7px 0 5px;line-height:1.35;word-break:break-word}
+    .day-task .foot{display:flex;justify-content:space-between;gap:3px;color:var(--muted);font-size:10px;margin-bottom:7px}
+    .day-task .progress-track{height:5px}
+    .day-task.archived{opacity:.76;background:#f7f6f8}
+    .legend{display:flex;align-items:center;gap:17px;color:var(--muted);font-size:11px;flex-wrap:wrap}
+    .legend-item{display:inline-flex;align-items:center;gap:6px}
+    .legend-circle{width:8px;height:8px;border-radius:50%;background:var(--lav)}
+    .workload-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,1fr);gap:19px;margin-top:20px;align-items:start}
+    .day-load-list{display:flex;flex-direction:column;gap:12px}
+    .day-load-row{display:grid;grid-template-columns:38px 1fr 54px;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+    .load-track{height:9px;border-radius:20px;background:#f0edf5;overflow:hidden}
+    .load-fill{height:100%;background:#b3a2ce;border-radius:20px}
+    .project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+    .project-card{padding:23px;display:flex;flex-direction:column;gap:19px}
+    .project-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .project-title-row{display:flex;align-items:center;gap:10px}
+    .project-ico{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:#f6f2fa}
+    .project-description{line-height:1.6;font-size:12px;color:var(--muted);min-height:19px}
+    .project-metrics{display:flex;gap:24px;flex-wrap:wrap}
+    .project-metrics div strong{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+    .project-metrics div span{color:var(--muted);font-size:10px}
+    .project-detail{margin-top:24px}
+    .project-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .goal-input{min-height:78px}
+    .focus-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.8fr);gap:19px;align-items:start}
+    .focus-main{padding:31px 25px;text-align:center}
+    .toggle-group{display:inline-flex;gap:4px;background:#f4f2f7;border:1px solid #eeeaf3;border-radius:11px;padding:4px}
+    .toggle-option{border:0;background:transparent;color:#8b8493;font-size:12px;font-weight:750;border-radius:8px;padding:10px 19px}
+    .toggle-option.active{background:#fff;color:var(--lav-dark);box-shadow:0 2px 9px rgba(50,35,73,.08)}
+    .focus-orbit{width:min(290px,75vw);aspect-ratio:1;position:relative;display:grid;place-items:center;margin:34px auto 24px;border-radius:50%;background:conic-gradient(var(--lav) var(--arc,0%),#efecf5 0)}
+    .focus-orbit:before{content:"";position:absolute;inset:10px;background:#fff;border-radius:50%}
+    .focus-center{position:relative;z-index:1}
+    .focus-time{font-size:clamp(50px,6vw,68px);font-weight:760;letter-spacing:-3.5px;font-variant-numeric:tabular-nums}
+    .focus-stage{color:var(--lav-dark);font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}
+    .focus-description{color:var(--muted);font-size:12px;margin-top:8px}
+    .focus-buttons{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:19px;flex-wrap:wrap}
+    .focus-action{height:46px;min-width:130px;border-radius:13px}
+    .field{display:flex;flex-direction:column;gap:7px;min-width:0}
+    .field label{font-weight:680;font-size:12px;color:#55505f}
+    .field input,.field select,.field textarea{background:#fff;border:1px solid #dedbe5;border-radius:10px;padding:11px 12px;width:100%;color:var(--ink);outline:none;min-height:40px;transition:border-color var(--fast),box-shadow var(--fast)}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lav);box-shadow:0 0 0 3px #9181b51d}
+    .field textarea{resize:vertical;min-height:76px;line-height:1.6}
+    .field-help{color:var(--muted);font-size:11px;line-height:1.55}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .full{grid-column:1/-1}
+    .focus-side .section-card{margin-bottom:18px}
+    .muted{color:var(--muted)}
+    .small-text{font-size:12px;line-height:1.65}
+    .session-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0edf3}
+    .session-item:last-child{border-bottom:0}
+    .session-ico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--lav-pale);color:var(--lav-dark)}
+    .session-item .label{flex:1;min-width:0;font-size:12px;font-weight:650}
+    .session-item .label span{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:3px}
+    .session-item .duration{font-size:12px;font-weight:740}
+    .analytics-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.9fr);gap:19px;margin-top:5px}
+    .bar-chart{height:230px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:17px;align-items:end;padding-top:15px}
+    .bar-group{height:100%;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:flex-end}
+    .bar-duo{height:175px;display:flex;gap:5px;align-items:flex-end;justify-content:center;width:100%}
+    .bar{width:min(31px,44%);border-radius:6px 6px 3px 3px;min-height:2px;transition:height .25s;position:relative}
+    .bar.planned{background:#d9d0e9}.bar.actual{background:var(--lav)}
+    .bar:hover:after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translate(-50%,-7px);white-space:nowrap;font-size:10px;background:#36323c;color:white;padding:5px 7px;border-radius:5px;z-index:2;pointer-events:none}
+    .bar-day{font-size:11px;color:var(--muted)}
+    .analytics-project{margin:17px 0}
+    .settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:19px;align-items:start}
+    .settings-group{padding:24px}
+    .settings-group h2{margin-bottom:6px}
+    .settings-sub{font-size:12px;color:var(--muted);margin:0 0 21px;line-height:1.65}
+    .settings-form{display:flex;flex-direction:column;gap:15px}
+    .settings-actions{display:flex;flex-direction:column;gap:11px}
+    .setting-action{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;flex-wrap:wrap}
+    .setting-action strong{font-size:12px;display:block}
+    .setting-action p{color:var(--muted);font-size:11px;margin:4px 0 0;line-height:1.6}
+    .alert{border-radius:11px;padding:13px 15px;background:#f5f1fb;border:1px solid #ece3f6;color:#65557b;font-size:12px;line-height:1.7;display:flex;gap:10px;align-items:flex-start}
+    .alert.warn{background:var(--amber-bg);border-color:#f4dfc7;color:#8a623e}
+    .modal-shell{position:fixed;inset:0;z-index:50;background:rgba(36,32,43,.42);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+    .modal{width:min(100%,510px);max-height:min(91vh,850px);overflow-y:auto;background:#fff;border:1px solid #e8e4ee;border-radius:20px;box-shadow:0 25px 80px rgba(26,18,40,.18);padding:25px;animation:rise .19s ease}
+    .modal.large{width:min(100%,650px)}
+    @keyframes rise{from{transform:translateY(10px);opacity:.6}to{transform:translateY(0);opacity:1}}
+    .modal-top{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:22px}
+    .modal-top h2{font-size:21px}
+    .modal-description{font-size:12px;color:var(--muted);line-height:1.7;margin:6px 0 0}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;align-items:center;flex-wrap:wrap;margin-top:23px}
+    .slider{width:100%;accent-color:var(--lav);cursor:pointer}
+    .progress-editor{background:#f9f7fc;border-radius:13px;padding:17px;margin:15px 0}
+    .progress-editor .percent{color:var(--lav-dark);font-weight:800;font-size:22px}
+    .detail-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+    .detail-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}
+    .detail-metric{background:#f8f7fa;border-radius:12px;padding:14px 10px}
+    .detail-metric strong{display:block;font-size:18px;letter-spacing:-.5px}
+    .detail-metric span{color:var(--muted);font-size:10px}
+    .divider{height:1px;background:var(--border);margin:19px 0}
+    .toast-area{position:fixed;bottom:24px;right:25px;z-index:80;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}
+    .toast{background:#38333f;color:#fff;border-radius:11px;padding:12px 15px;box-shadow:0 13px 35px #1e182333;display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.5;animation:rise .2s ease}
+    .toast.error{background:#974e5d}.toast.success{background:#386c5c}
+    .text-button{background:none;border:0;color:var(--lav-dark);font-size:12px;font-weight:720;padding:6px 0}
+    .kicker{display:flex;align-items:center;gap:7px;color:var(--lav-dark);font-size:11px;font-weight:750;margin-bottom:12px}
+    .mobile-logo{display:none}
+    .hidden{display:none!important}
+    @media(max-width:1180px){.dashboard-grid,.workload-grid,.focus-layout,.analytics-grid{grid-template-columns:minmax(0,1fr)}.week-board{min-width:1040px}.stats-grid{gap:12px}}
+    @media(max-width:950px){.layout{grid-template-columns:73px minmax(0,1fr)}.sidebar{padding:26px 12px}.brand{padding:0 4px 30px;justify-content:center}.brand strong,.brand small,.nav-label,.nav-button span,.sidebar-bottom{display:none}.nav-button{justify-content:center;padding:13px 8px}.brand-mark{width:42px;height:42px}.topbar{padding:0 27px}.content{padding:30px 27px 65px}}
+    @media(max-width:720px){.layout{display:block}.sidebar{height:auto;position:fixed;top:auto;bottom:0;left:0;right:0;z-index:25;padding:7px 6px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px #342b4d0a;border-right:0;border-top:1px solid var(--border)}.brand{display:none}.nav{display:grid;grid-template-columns:repeat(6,1fr);gap:1px}.nav-button{flex-direction:column;gap:4px;border-radius:9px;padding:7px 2px 5px;font-size:9px;justify-content:center}.nav-button span{display:block;font-size:9px;font-weight:600;white-space:nowrap}.nav-button .icon{width:18px;height:18px}.topbar{height:62px;padding:0 17px;position:static}.top-date{display:none}.mobile-logo{display:block;font-size:12px;font-weight:770;color:var(--lav-dark)}.content{padding:24px 15px 115px}.page-heading{margin-bottom:21px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-grid .stat:last-child{grid-column:1/-1}.stat{padding:15px}.stat-value{font-size:25px}.section-card{padding:17px}.dashboard-grid,.settings-grid{grid-template-columns:1fr}.project-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.week-board{min-width:0;grid-template-columns:1fr;gap:8px}.week-scroll{overflow:visible}.day-column{min-height:auto}.day-column .day-task{max-width:none}.day-total{margin-top:6px}.day-add{max-width:none}.focus-orbit{margin:27px auto}.modal{padding:19px}.detail-metrics{gap:6px}.detail-metric{padding:10px 7px}.detail-metric strong{font-size:15px}.toast-area{bottom:89px;right:14px}.week-toolbar{align-items:flex-start}.week-range{font-size:11px}}
+    @media(max-width:400px){.stats-grid{gap:8px}.page-heading{flex-direction:column}.week-control{flex-wrap:wrap}.row-right .mini-progress{display:none}.stat-label{font-size:11px}.focus-time{font-size:49px}.project-metrics{gap:13px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="主要導覽">
+      <div class="brand"><div class="brand-mark" id="brand-mark"></div><div><strong>Luma Planner</strong><small>YOUR FOCUS SPACE</small></div></div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="nav" id="nav"></nav>
+      <div class="sidebar-bottom"><div class="sidebar-note"><span class="mini-dot"></span><strong>Little progress, every day.</strong><p>把重要的事安排好，專心完成眼前的一小步。</p></div><div class="sidebar-footer">Luma Planner · v1.0</div></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumbs"><span class="mobile-logo">Luma ✦</span><span class="desktop-crumb">Workspace</span><span class="desktop-crumb">/</span><strong id="page-breadcrumb">Dashboard</strong></div><div class="top-right"><span class="top-date" id="top-date"></span><div class="avatar" id="avatar">L</div></div></header>
+      <div class="content" id="content"></div>
+    </main>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast-area" class="toast-area" role="status" aria-live="polite"></div>
+  <input id="file-import" type="file" accept="application/json,.json" class="hidden" aria-label="匯入 JSON 備份" />
+  <script>
+  'use strict';
+  const STORAGE_KEY='lumaPlanner_v1';
+  const DAY_LABELS=['週一','週二','週三','週四','週五','週六','週日'];
+  const NAV=[['dashboard','Dashboard','home'],['planner','Weekly Planner','calendar'],['projects','Projects','folder'],['focus','Focus','timer'],['analytics','Analytics','chart'],['settings','Settings','settings']];
+  const PROJECT_COLORS=['#9181b5','#7295ad','#6b9a87','#c69b76','#b58b9f','#948caa'];
+  const ICON_PATHS={
+    sparkle:'<path d="m12 3 1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9L12 3Z"/><path d="m19 17 .7 1.3L21 19l-1.3.7L19 21l-.7-1.3L17 19l1.3-.7L19 17Z"/>',
+    home:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="m9 16 2 2 4-4"/>',
+    folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>',
+    timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 2h6M12 5V2"/>',
+    chart:'<path d="M3 3v18h18M7 16v-4M12 16V8M17 16V5"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19 13.5a1.5 1.5 0 0 0 .3 1.6l.1.1-2.1 2.1-.1-.1a1.5 1.5 0 0 0-1.6-.3 1.5 1.5 0 0 0-.9 1.4V19h-3v-.2a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.6.3l-.1.1-2.1-2.1.1-.1a1.5 1.5 0 0 0 .3-1.6 1.5 1.5 0 0 0-1.4-.9H5v-3h.2a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.6l-.1-.1 2.1-2.1.1.1a1.5 1.5 0 0 0 1.6.3 1.5 1.5 0 0 0 .9-1.4V5h3v.2a1.5 1.5 0 0 0 1 1.4 1.5 1.5 0 0 0 1.6-.3l.1-.1 2.1 2.1-.1.1a1.5 1.5 0 0 0-.3 1.6 1.5 1.5 0 0 0 1.4.9h.2v3h-.2a1.5 1.5 0 0 0-1.4 1Z" transform="translate(-1 -1)"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    check:'<path d="m5 12 4 4L19 6"/>',
+    checkcircle:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    circle:'<circle cx="12" cy="12" r="9"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    chevronLeft:'<path d="m14 6-6 6 6 6"/>',
+    chevronRight:'<path d="m10 6 6 6-6 6"/>',
+    arrowRight:'<path d="M4 12h16m-7-7 7 7-7 7"/>',
+    arrowUp:'<path d="M12 19V5m-7 7 7-7 7 7"/>',
+    arrowDown:'<path d="M12 5v14m-7-7 7 7 7-7"/>',
+    edit:'<path d="M12 20h9M4 17l10-10 3 3-10 10-4 1 1-4ZM14 7l2-2a2 2 0 0 1 3 0 2 2 0 0 1 0 3l-2 2"/>',
+    copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    trash:'<path d="M4 7h16M10 4h4M6 7l1 14h10l1-14M10 11v6m4-6v6"/>',
+    close:'<path d="m5 5 14 14M19 5 5 19"/>',
+    play:'<path d="m8 5 11 7-11 7V5Z"/>',
+    pause:'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+    stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    reset:'<path d="M3 11a9 9 0 1 1 3 7M3 4v7h7"/>',
+    warning:'<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3h.01"/>',
+    info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-9h.01"/>',
+    download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
+    upload:'<path d="M12 16V4M7 9l5-5 5 5M4 17v4h16v-4"/>',
+    save:'<path d="M4 4h13l3 3v13H4zM7 4v6h9V4M8 20v-7h8v7"/>',
+    menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+    book:'<path d="M4 4h7a3 3 0 0 1 3 3v14H7a3 3 0 0 0-3-3V4Zm16 0h-5a3 3 0 0 0-3 3v14h5a3 3 0 0 1 3-3V4Z"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    bolt:'<path d="m13 2-9 12h7l-1 8 10-13h-7l0-7Z"/>',
+    link:'<path d="M10 14a5 5 0 0 0 7 .3l3-3a5 5 0 0 0-7-7l-2 2M14 10a5 5 0 0 0-7-.3l-3 3a5 5 0 0 0 7 7l2-2"/>',
+    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+    more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+  };
+  function icon(name,size=18){return `<svg class="icon" width="${size}" height="${size}" style="width:${size}px;height:${size}px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.circle}</svg>`;}
+  const $=(selector,root=document)=>root.querySelector(selector);
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const id=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`id_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  function parseLocalDate(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(s)))return null;const [y,m,d]=s.split('-').map(Number);const date=new Date(y,m-1,d,12);return date.getFullYear()===y&&date.getMonth()===m-1&&date.getDate()===d?date:null;}
+  function isoDate(date){const d=new Date(date);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+  function dateOffset(s,num){const d=parseLocalDate(s);if(!d)return today();d.setDate(d.getDate()+num);return isoDate(d);}
+  function today(){return isoDate(new Date());}
+  function weekStart(s){const d=parseLocalDate(s)||new Date();const offset=(d.getDay()+6)%7;d.setDate(d.getDate()-offset);return isoDate(d);}
+  function dateText(s,options){return (parseLocalDate(s)||new Date()).toLocaleDateString('zh-TW',options||{month:'short',day:'numeric'});}
+  function dateRange(w){let end=dateOffset(w,6);let a=parseLocalDate(w),b=parseLocalDate(end);return `${a.getFullYear()} / ${a.getMonth()+1}.${a.getDate()} — ${b.getMonth()+1}.${b.getDate()}`;}
+  function fmt(minutes){let m=Math.max(0,Math.round(Number(minutes)||0));let h=Math.floor(m/60);return h?`${h}h${m%60?` ${m%60}m`:''}`:`${m}m`;}
+  function fmtLong(ms){const s=Math.max(0,Math.floor(ms/1000));return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function fmtClock(ms,withHours=false){let s=Math.max(0,Math.floor(ms/1000));return (withHours||s>=3600)?`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function defaultState(){return {version:1,projects:[],tasks:[],weeklyGoals:[],focusSessions:[],settings:{displayName:'',focusMinutes:25,shortBreakMinutes:5,longBreakMinutes:15,soundEnabled:true},timerState:null};}
+  let state=defaultState(),view='dashboard',selectedWeek=weekStart(today()),selectedProject=null,modal=null,storageOk=true,hydratedTimer=false;
+  function validateData(o){
+    if(!o||typeof o!=='object'||o.version!==1||!Array.isArray(o.projects)||!Array.isArray(o.tasks)||!Array.isArray(o.weeklyGoals)||!Array.isArray(o.focusSessions)||!o.settings||typeof o.settings!=='object')throw Error('檔案版本或資料結構不正確');
+    if(o.projects.length>10000||o.tasks.length>100000||o.focusSessions.length>250000)throw Error('資料量超出限制');
+    const ids=new Set(),taskIds=new Set(),projectIds=new Set();
+    for(const p of o.projects){if(typeof p.id!=='string'||!p.id||projectIds.has(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>150||typeof p.description!=='string')throw Error('專案資料不完整或重複');projectIds.add(p.id);}
+    for(const t of o.tasks){if(typeof t.id!=='string'||!t.id||taskIds.has(t.id)||!projectIds.has(t.projectId)||typeof t.title!=='string'||!t.title.trim()||t.title.length>200||!parseLocalDate(t.scheduledDate)||!Number.isInteger(t.estimatedMinutes)||t.estimatedMinutes<1||t.estimatedMinutes>10000000||typeof t.progress!=='number'||!Number.isFinite(t.progress)||t.progress<0||t.progress>100||!['active','completed','carried_over'].includes(t.status)||typeof t.notes!=='string')throw Error('任務資料不完整');taskIds.add(t.id);if((t.status==='completed')!==(t.progress===100))throw Error('完成狀態與進度不一致');if(t.status==='carried_over'&&t.progress>=100)throw Error('轉移紀錄進度不正確');}
+    const tm=new Map(o.tasks.map(t=>[t.id,t]));
+    for(const t of o.tasks){if(t.carriedToId){const next=tm.get(t.carriedToId);if(!next||next.carriedFromId!==t.id||t.status!=='carried_over'||next.projectId!==t.projectId||next.scheduledDate<=t.scheduledDate)throw Error('Carry Over 關聯資料損壞');}if(t.carriedFromId){const prev=tm.get(t.carriedFromId);if(!prev||prev.carriedToId!==t.id)throw Error('前置任務不存在');}if(t.status==='carried_over'&&!t.carriedToId)throw Error('轉移任務缺少後續紀錄');}
+    for(const g of o.weeklyGoals){if(!g||!projectIds.has(g.projectId)||!parseLocalDate(g.weekStart)||weekStart(g.weekStart)!==g.weekStart||typeof g.text!=='string')throw Error('每週目標資料不正確');}
+    const sessionIds=new Set();
+    for(const s of o.focusSessions){if(!s||typeof s.id!=='string'||sessionIds.has(s.id)||!Number.isFinite(s.durationMs)||s.durationMs<=0||s.durationMs>1000*60*60*24||!Number.isFinite(Date.parse(s.endedAt))||s.taskId&&!taskIds.has(s.taskId))throw Error('專注紀錄資料不正確');sessionIds.add(s.id);}
+    const validTimer=o.timerState===null||o.timerState===undefined||(typeof o.timerState==='object'&&['pomodoro','free'].includes(o.timerState.mode)&&['focus','shortBreak','longBreak'].includes(o.timerState.stage)&&typeof o.timerState.running==='boolean'&&Number.isFinite(o.timerState.elapsedBeforePauseMs)&&o.timerState.elapsedBeforePauseMs>=0&&Number.isFinite(o.timerState.startedAt)&&Number.isFinite(o.timerState.plannedMs));
+    if(!validTimer)throw Error('計時器資料不正確');
+    return {version:1,projects:o.projects,tasks:o.tasks,weeklyGoals:o.weeklyGoals,focusSessions:o.focusSessions,settings:{...defaultState().settings,...o.settings},timerState:o.timerState||null};
+  }
+  function load(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw)state=validateData(JSON.parse(raw));}catch(e){storageOk=false;state=defaultState();console.warn('資料讀取失敗:',e);}}
+  function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));storageOk=true;return true;}catch(e){storageOk=false;notify('無法寫入本機儲存空間，請匯出 JSON 備份','error');console.warn(e);return false;}}
+  function commit(message){persist();render();if(message)notify(message,'success');}
+  function getProject(projectId){return state.projects.find(p=>p.id===projectId);}
+  function getTask(taskId){return state.tasks.find(t=>t.id===taskId);}
+  function color(project){const c=project?.color;return PROJECT_COLORS.includes(c)?c:PROJECT_COLORS[0];}
+  function tasksOn(day){return state.tasks.filter(t=>t.scheduledDate===day).sort((a,b)=>(a.status==='completed')-(b.status==='completed')||a.createdAt.localeCompare(b.createdAt));}
+  function weekTasks(w=selectedWeek,projectId=null){const end=dateOffset(w,6);return state.tasks.filter(t=>t.scheduledDate>=w&&t.scheduledDate<=end&&(!projectId||t.projectId===projectId));}
+  function confirmedSessions(w=selectedWeek,projectId=null){const end=dateOffset(w,6);return state.focusSessions.filter(s=>{const d=isoDate(new Date(s.endedAt));const task=s.taskId?getTask(s.taskId):null;return d>=w&&d<=end&&(!projectId||(task&&task.projectId===projectId));});}
+  function sumTime(tasks){return tasks.reduce((n,t)=>n+t.estimatedMinutes,0);}
+  function focusMs(sessions){return sessions.reduce((sum,s)=>sum+s.durationMs,0);}
+  function weightedStats(tasks,w){let weight=0,earned=0,remaining=0;for(const t of tasks){let successor=t.carriedToId?getTask(t.carriedToId):null;let sameWeek=!!successor&&weekStart(successor.scheduledDate)===w;let part=t.estimatedMinutes*t.progress/100;weight+=sameWeek?part:t.estimatedMinutes;earned+=part;if(t.status==='active')remaining+=t.estimatedMinutes*(1-t.progress/100);}return {pct:weight>0?clamp(100*earned/weight,0,100):0,remaining:Math.round(remaining),weight,earned};}
+  function workForDay(day){return sumTime(tasksOn(day));}
+  function projectFocusMs(pId,w=selectedWeek){return focusMs(confirmedSessions(w,pId));}
+  function weeklyOverview(w=selectedWeek){const list=weekTasks(w),stats=weightedStats(list,w);return {list,...stats,planned:sumTime(list),focus:focusMs(confirmedSessions(w)),done:list.filter(t=>t.status==='completed').length};}
+  function progressBar(p,size=''){return `<div class="progress-track" ${size?'style="height:'+size+'"':''} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p)}"><div class="progress-fill" style="width:${clamp(p,0,100)}%"></div></div>`;}
+  function pct(p){return `${Math.round(p)}%`;}
+  function empty(iconName,title,desc,button=''){return `<div class="empty"><div class="empty-icon">${icon(iconName,24)}</div><strong>${title}</strong><p>${desc}</p>${button}</div>`;}
+  function taskBadge(t){return t.status==='carried_over'?'<span class="chip amber">已轉移</span>':t.status==='completed'?'<span class="chip green">已完成</span>':t.carriedFromId?'<span class="chip lav">Carry Over</span>':'';}
+  function taskRow(t){const p=getProject(t.projectId);return `<div class="task-row"><button class="task-check ${t.status==='completed'?'complete':''}" data-action="toggle-complete" data-id="${t.id}" aria-label="${t.status==='completed'?'取消完成':'標記完成'}" ${t.status==='carried_over'?'disabled title="已轉移任務不可修改"':''}>${icon(t.status==='completed'?'checkcircle':'circle',22)}</button><button class="task-row-main" data-action="task-detail" data-id="${t.id}"><div class="task-title ${t.status==='completed'?'done':''}">${esc(t.title)}</div><div class="task-meta"><span class="project-dot" style="background:${color(p)}"></span>${esc(p?.name||'未知專案')} · ${fmt(t.estimatedMinutes)} ${taskBadge(t)}</div></button><div class="row-right"><div class="mini-progress"><span style="width:${t.progress}%"></span></div><span class="muted" style="font-size:11px;min-width:29px">${pct(t.progress)}</span>${t.status==='active'?`<button class="btn icon-btn small" data-action="task-focus" data-id="${t.id}" title="開始專注" aria-label="對此任務開始專注">${icon('play',13)}</button>`:''}</div></div>`;}
+  function renderNav(){document.getElementById('nav').innerHTML=NAV.map(([v,label,ic])=>`<button class="nav-button ${view===v?'active':''}" data-action="navigate" data-view="${v}" aria-current="${view===v?'page':'false'}">${icon(ic,19)}<span>${label}</span></button>`).join('');document.getElementById('page-breadcrumb').textContent=NAV.find(n=>n[0]===view)?.[1]||'Dashboard';document.getElementById('top-date').textContent=dateText(today(),{year:'numeric',month:'long',day:'numeric',weekday:'long'});document.getElementById('avatar').textContent=String(state.settings.displayName||'L').trim().slice(0,1).toUpperCase()||'L';}
+  function heading(kicker,title,sub,actions=''){return `<div class="page-heading"><div><p class="eyebrow">${kicker}</p><h1>${title}</h1><p class="subhead">${sub}</p></div>${actions?`<div class="actions">${actions}</div>`:''}</div>`;}
+  function render(){renderNav();const pages={dashboard:renderDashboard,planner:renderPlanner,projects:renderProjects,focus:renderFocus,analytics:renderAnalytics,settings:renderSettings};$('#content').innerHTML=pages[view]();updateTimerDisplay();}
+  function weekControls(w){return `<div class="week-control"><button class="btn icon-btn small" data-action="week-prev" title="上一週">${icon('chevronLeft')}</button><span class="week-range">${dateRange(w)}</span><button class="btn icon-btn small" data-action="week-next" title="下一週">${icon('chevronRight')}</button><button class="btn small" data-action="week-today">本週</button></div>`;}
+  function renderDashboard(){
+    const d=today(),ts=tasksOn(d),done=ts.filter(t=>t.status==='completed').length,total=sumTime(ts),s=state.focusSessions.filter(s=>isoDate(new Date(s.endedAt))===d),sum=weeklyOverview(weekStart(d)),name=esc(state.settings.displayName?.trim()||'there');let hour=new Date().getHours();const greeting=hour<11?'Good morning':hour<17?'Good afternoon':'Good evening';const week=weekStart(d);const max=Math.max(60,...Array.from({length:7},(_,i)=>workForDay(dateOffset(week,i))));const overdue=state.tasks.filter(t=>t.status==='active'&&t.scheduledDate<d);
+    return heading('YOUR PRODUCTIVITY SPACE',`${greeting}, <span style="color:var(--lav-dark)">${name}</span> <span style="color:var(--lav)">✦</span>`,'今天也把重要的事情，一件一件做好。',`<button class="btn primary" data-action="add-task">${icon('plus')} 新增任務</button>`)+
+    `<div class="stats-grid">${statCard('今日完成任務',`${done} <span style="font-size:17px;color:#b5afba;font-weight:560">/ ${ts.length}</span>`,'checkcircle','今日任務完成數')}${statCard('今日預計工作',fmt(total),'calendar','來自今天安排的任務')}${statCard('今日專注時間',fmt(Math.round(focusMs(s)/60000)),'timer',`${s.length} 次已確認的專注紀錄`)}</div>`+
+    `${overdue.length?`<div class="alert warn" style="margin-bottom:22px">${icon('warning')}<div><strong>有 ${overdue.length} 項過去的任務尚未完成。</strong> 可以打開任務，將剩餘工作轉移至其他日期。<br><button class="text-button" data-action="open-overdue">檢視待處理任務 ${icon('arrowRight',13)}</button></div></div>`:''}`+
+    `<div class="dashboard-grid"><section class="card section-card"><div class="section-head"><div><h2>Today's Tasks</h2><div class="subhead" style="margin-top:4px">${dateText(d,{month:'long',day:'numeric',weekday:'long'})} · 今日安排</div></div><button class="mini-link" data-action="go-planner">查看週計畫 ${icon('arrowRight',13)}</button></div>${ts.length?`<div class="task-list">${ts.map(taskRow).join('')}</div>`:empty('calendar','今天還沒有安排任務','為今天安排一件值得完成的小事吧。',`<button class="btn primary small" data-action="add-task" data-date="${d}">${icon('plus',14)} 新增今日任務</button>`)}</section>
+    <div class="stack"><section class="card section-card"><div class="section-head"><h2>This Week</h2><span class="chip lav">本週</span></div><div class="progress-row"><span class="muted">工作量加權完成率</span><strong>${pct(sum.pct)}</strong></div>${progressBar(sum.pct)}<div style="display:flex;justify-content:space-between;gap:12px;margin-top:18px"><div><div style="font-size:18px;font-weight:750">${fmt(sum.planned)}</div><div class="muted" style="font-size:11px;margin-top:4px">本週排定時數</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:750">${fmt(sum.remaining)}</div><div class="muted" style="font-size:11px;margin-top:4px">尚未完成工作</div></div></div><div class="weekly-glance">${Array.from({length:7},(_,i)=>{let date=dateOffset(week,i),minutes=workForDay(date);return `<div class="glance-day ${date===d?'today':''}" title="${DAY_LABELS[i]} ${fmt(minutes)}"><div class="glance-track"><div class="glance-bar" style="height:${minutes?Math.max(5,minutes/max*100):0}%"></div></div><span class="glance-day-label">${DAY_LABELS[i].slice(1)}</span></div>`}).join('')}</div></section>
+    <section class="card section-card"><div class="section-head"><h2>Quick Focus</h2>${icon('bolt',20)}</div><p class="subhead" style="margin:-8px 0 17px">選擇任務，開始記錄真正的專注時間。</p><button class="btn primary wide" data-action="navigate" data-view="focus">${icon('play',16)} 開始專注</button></section></div></div>`;
+  }
+  function statCard(label,value,ic,foot){return `<section class="card stat"><div class="stat-top"><div class="stat-label">${label}</div><div class="stat-icon">${icon(ic)}</div></div><div class="stat-value">${value}</div><div class="stat-foot">${foot}</div></section>`;}
+  function renderPlanner(){
+    const w=selectedWeek,all=weekTasks(w),sum=weeklyOverview(w);const goals=state.projects.map(p=>{const record=state.weeklyGoals.find(g=>g.projectId===p.id&&g.weekStart===w);return `<div class="setting-action"><div style="flex:1;min-width:0"><strong><span class="project-dot" style="background:${color(p)}"></span> ${esc(p.name)}</strong><p>${esc(record?.text||'尚未設定本週目標')}</p></div><button class="btn small" data-action="edit-goal" data-id="${p.id}">${icon('edit',13)} 編輯目標</button></div>`;});const weekMax=Math.max(60,...Array.from({length:7},(_,i)=>workForDay(dateOffset(w,i))));
+    return heading('PLAN YOUR WEEK','Weekly Planner','每個任務安排在一天，不用指定開始時刻。拖曳任務也能快速調整日期。',`<button class="btn primary" data-action="add-task">${icon('plus')} 新增任務</button>`)+
+    `<div class="week-toolbar">${weekControls(w)}<div class="legend"><span class="legend-item"><span class="legend-circle"></span>總工作量 ${fmt(sum.planned)}</span><span class="legend-item">待完成 ${fmt(sum.remaining)}</span></div></div>`+
+    `<div class="week-scroll"><div class="week-board">${Array.from({length:7},(_,i)=>{let day=dateOffset(w,i),list=tasksOn(day);return `<section class="day-column ${day===today()?'today':''}" data-day="${day}"><div class="day-title"><div><div class="day-label">${DAY_LABELS[i]}</div><div class="day-date">${(parseLocalDate(day)).getDate()}</div></div>${day===today()?'<span class="chip lav">TODAY</span>':''}</div>${list.map(t=>{const p=getProject(t.projectId);return `<div class="day-task ${t.status==='carried_over'?'archived':''}" data-action="task-detail" data-id="${t.id}" ${t.status==='active'?'draggable="true"':''} tabindex="0" role="button" aria-label="查看 ${esc(t.title)}"><div class="day-task-top"><span class="project-dot" style="background:${color(p)}"></span>${t.status==='carried_over'?`<span class="chip amber">已轉移</span>`:t.status==='completed'?`<span class="chip green">完成</span>`:t.carriedFromId?`<span class="chip lav">延續</span>`:''}</div><div class="name">${esc(t.title)}</div><div class="foot"><span>${fmt(t.estimatedMinutes)}</span><span>${pct(t.progress)}</span></div>${progressBar(t.progress)}</div>`;}).join('')}<button class="day-add" data-action="add-task" data-date="${day}">${icon('plus',13)} 新增</button><div class="day-total"><span>當日排定</span><strong>${fmt(workForDay(day))}</strong></div></section>`}).join('')}</div></div>`+
+    `<div class="workload-grid"><section class="card section-card"><div class="section-head"><h2>Daily Workload</h2><span class="chip lav">${fmt(sum.planned)} / 本週</span></div><div class="day-load-list">${Array.from({length:7},(_,i)=>{const v=workForDay(dateOffset(w,i));return `<div class="day-load-row"><span>${DAY_LABELS[i]}</span><div class="load-track"><div class="load-fill" style="width:${v/weekMax*100}%"></div></div><strong style="text-align:right;color:var(--ink)">${fmt(v)}</strong></div>`}).join('')}</div><div class="alert" style="margin-top:17px">${icon('info')} 此圖顯示每天原本安排的時數；已轉移的任務仍保留在原日期的歷史紀錄。</div></section>
+    <section class="card section-card"><div class="section-head"><h2>Weekly Goals</h2>${icon('target')}</div><p class="subhead" style="margin:-8px 0 15px">寫下各專案這週最想達成的成果。</p><div class="settings-actions">${goals.length?goals.join(''):empty('folder','先建立一個專案','建立專案後，就能為每週設定方向。',`<button class="btn small primary" data-action="add-project">${icon('plus',13)} 新增專案</button>`)}</div></section></div>`;
+  }
+  function renderProjects(){
+    const w=selectedWeek;if(selectedProject&&!getProject(selectedProject))selectedProject=null;
+    return heading('ORGANIZE YOUR WORK','Projects','用專案整理課程、研究與重要事項；每個專案只計算當週完成率。',`<button class="btn primary" data-action="add-project">${icon('plus')} 新增專案</button>`)+
+    `<div class="week-toolbar">${weekControls(w)}<span class="muted" style="font-size:12px">目前共 ${state.projects.length} 個專案</span></div>`+
+    `${state.projects.length?`<div class="project-grid">${state.projects.map(p=>{let list=weekTasks(w,p.id),stat=weightedStats(list,w);return `<section class="card project-card"><div class="project-card-head"><div class="project-title-row"><div class="project-ico" style="color:${color(p)}">${icon('folder',20)}</div><div><h3>${esc(p.name)}</h3><div class="muted" style="font-size:10px;margin-top:3px">${list.length} 項本週任務</div></div></div><div class="actions"><button class="btn icon-btn small" title="編輯專案" data-action="edit-project" data-id="${p.id}">${icon('edit',15)}</button><button class="btn icon-btn small danger" title="刪除專案" data-action="delete-project" data-id="${p.id}">${icon('trash',15)}</button></div></div><div class="project-description">${esc(p.description||'尚未新增專案描述')}</div><div><div class="progress-row"><span class="muted">本週進度</span><strong style="color:var(--lav-dark)">${pct(stat.pct)}</strong></div>${progressBar(stat.pct)}</div><div class="project-metrics"><div><strong>${fmt(sumTime(list))}</strong><span>本週排定</span></div><div><strong>${fmt(stat.remaining)}</strong><span>剩餘工作</span></div><div><strong>${fmt(Math.round(projectFocusMs(p.id,w)/60000))}</strong><span>實際專注</span></div></div><button class="btn small wide" data-action="project-details" data-id="${p.id}">${selectedProject===p.id?'收合任務':'檢視當週任務'} ${icon('arrowRight',14)}</button></section>`}).join('')}</div>`:empty('folder','還沒有任何專案','先建立一個專案，例如「GRE Preparation」或「研究報告」。',`<button class="btn primary" data-action="add-project">${icon('plus')} 建立第一個專案</button>`)}`+
+    `${selectedProject&&getProject(selectedProject)?(()=>{const p=getProject(selectedProject),list=weekTasks(w,p.id),goal=state.weeklyGoals.find(g=>g.projectId===p.id&&g.weekStart===w);return `<section class="card section-card project-detail"><div class="project-detail-head"><div><p class="eyebrow">PROJECT DETAILS</p><h2>${esc(p.name)}</h2></div><div class="actions"><button class="btn small" data-action="edit-goal" data-id="${p.id}">${icon('edit',14)} 編輯本週目標</button><button class="btn small primary" data-action="add-task" data-project="${p.id}">${icon('plus',14)} 新增任務</button></div></div><div class="alert" style="margin-bottom:18px">${icon('target')} 本週目標：${esc(goal?.text||'尚未填寫本週目標')}</div>${list.length?`<div class="task-list">${list.sort((a,b)=>a.scheduledDate.localeCompare(b.scheduledDate)).map(taskRow).join('')}</div>`:empty('calendar','本週還沒有這個專案的任務','試著安排今天開始要做的一件事。')}</section>`})():''}`;
+  }
+  function newTimer(mode='pomodoro',taskId=null){return {mode,stage:'focus',running:false,startedAt:0,elapsedBeforePauseMs:0,plannedMs:mode==='pomodoro'?state.settings.focusMinutes*60000:0,taskId,cycles:0};}
+  function timer(){if(!state.timerState)state.timerState=newTimer();return state.timerState;}
+  function elapsedTime(t=timer()){return Math.max(0,t.elapsedBeforePauseMs+(t.running?Date.now()-t.startedAt:0));}
+  function getTaskOptions(current=null){const active=state.tasks.filter(t=>t.status==='active').sort((a,b)=>(a.scheduledDate===today()?-1:0)-(b.scheduledDate===today()?-1:0)||a.scheduledDate.localeCompare(b.scheduledDate));return `<option value="">自由專注（不綁定任務）</option>`+active.map(t=>`<option value="${t.id}" ${current===t.id?'selected':''}>${esc(t.title)} · ${esc(getProject(t.projectId)?.name||'')} · ${dateText(t.scheduledDate)}</option>`).join('');}
+  function focusStageName(t){return t.mode==='free'?'FREE FOCUS':t.stage==='focus'?'FOCUS SESSION':t.stage==='shortBreak'?'SHORT BREAK':'LONG BREAK';}
+  function renderFocus(){const t=timer(),stageFocus=t.stage==='focus',isFree=t.mode==='free',last=state.focusSessions.slice().sort((a,b)=>b.endedAt.localeCompare(a.endedAt)).slice(0,5);return heading('TIME TO FOCUS','Focus Mode','關掉其他雜念，為正在做的事情留下一段專注時間。')+
+    `<div class="focus-layout"><section class="card focus-main"><div class="toggle-group"><button class="toggle-option ${!isFree?'active':''}" data-action="timer-mode" data-mode="pomodoro" aria-pressed="${!isFree}">Pomodoro</button><button class="toggle-option ${isFree?'active':''}" data-action="timer-mode" data-mode="free" aria-pressed="${isFree}">Free Focus</button></div><div class="focus-orbit" id="focus-orbit"><div class="focus-center"><div class="focus-stage" id="timer-stage">${focusStageName(t)}</div><div class="focus-time" id="timer-display">25:00</div><div class="focus-description" id="timer-sub">${isFree?'自由計時 · 累積實際專注':stageFocus?'專注當下，不用急著完成全部':'讓自己好好休息一下'}</div></div></div><div class="focus-buttons"><button class="btn focus-action" data-action="timer-reset">${icon('reset')} 重設</button><button class="btn primary focus-action" data-action="timer-play" id="timer-play">${icon('play')} 開始</button><button class="btn focus-action" data-action="timer-stop" id="timer-stop">${icon('stop')} 結束並記錄</button></div><p class="subhead" style="margin-top:18px">${!isFree?`已完成 ${t.cycles} 組番茄鐘 · 每 4 組進入長休息`:'自由計時可在任何時間結束並儲存'}</p></section>
+    <aside class="focus-side"><section class="card section-card"><div class="section-head"><h2>Current Session</h2><span class="chip lav">${isFree?'Free Timer':stageFocus?'Pomodoro':'Break'}</span></div><div class="field"><label for="focus-task">正在專注的任務</label><select id="focus-task" data-change="focus-task" ${!stageFocus||t.running?'disabled':''}>${getTaskOptions(t.taskId)}</select></div><div class="divider"></div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div><strong style="font-size:12px">計時器偏好</strong><p class="subhead" style="margin-top:4px">${state.settings.focusMinutes} / ${state.settings.shortBreakMinutes} / ${state.settings.longBreakMinutes} 分鐘</p></div><button class="btn small" data-action="navigate" data-view="settings">${icon('settings',14)} 調整</button></div></section>
+    <section class="card section-card"><div class="section-head"><h2>Recent Sessions</h2><span class="chip">${last.length} 筆</span></div>${last.length?last.map(s=>{let task=s.taskId?getTask(s.taskId):null;return `<div class="session-item"><div class="session-ico">${icon('timer',16)}</div><div class="label">${esc(task?.title||'自由專注')}<span>${dateText(isoDate(new Date(s.endedAt)),{month:'numeric',day:'numeric'})} · ${new Date(s.endedAt).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</span></div><div class="duration">${fmt(Math.round(s.durationMs/60000))}</div></div>`}).join(''):empty('timer','還沒有專注紀錄','完成第一段專注後，這裡就會顯示你的成果。')}</section></aside></div>`;}
+  function updateTimerDisplay(){if(view!=='focus')return;const t=timer(),elapsed=elapsedTime(t);let show=t.mode==='free'?elapsed:Math.max(0,t.plannedMs-elapsed),time=fmtClock(show,t.mode==='free'&&show>=3600000);let display=$('#timer-display'),ring=$('#focus-orbit'),play=$('#timer-play'),stop=$('#timer-stop');if(display)display.textContent=time;if(ring){let value=t.mode==='free'?Math.min((elapsed%3600000)/3600000*100,100):clamp(elapsed/Math.max(t.plannedMs,1)*100,0,100);ring.style.setProperty('--arc',value+'%');}if(play)play.innerHTML=t.running?`${icon('pause')} 暫停`:`${icon('play')} ${elapsed?'繼續':'開始'}`;if(stop)stop.disabled=elapsed<1000||t.stage!=='focus';let sub=$('#timer-sub');if(sub)sub.textContent=t.stage!=='focus'?'休息時間不計入專注統計':t.mode==='free'?'自由計時 · 累積實際專注':'專注當下，不用急著完成全部';}
+  function renderAnalytics(){const w=selectedWeek,info=weeklyOverview(w);const daily=Array.from({length:7},(_,i)=>{let d=dateOffset(w,i);return {day:d,planned:workForDay(d),actual:focusMs(state.focusSessions.filter(s=>isoDate(new Date(s.endedAt))===d))/60000};});let max=Math.max(30,...daily.flatMap(v=>[v.planned,v.actual]));const sorted=state.projects.map(p=>({p,stat:weightedStats(weekTasks(w,p.id),w)}));const sessions=confirmedSessions(w),most=daily.reduce((a,b)=>b.actual>a.actual?b:a,daily[0]);return heading('INSIGHTS & REFLECTION','Analytics','看看這週安排了多少工作、實際專注多久，以及完成了多少。')+
+    `<div class="week-toolbar">${weekControls(w)}<span class="muted" style="font-size:12px">依據真實任務與已確認的專注紀錄</span></div>`+
+    `<div class="stats-grid">${statCard('本週排定工作',fmt(info.planned),'calendar','含保留的歷史排程')}${statCard('本週實際專注',fmt(Math.round(info.focus/60000)),'timer',`${sessions.length} 次已確認專注`)}${statCard('本週工作完成率',pct(info.pct),'target',`${info.done} 項已完成任務`)}</div>`+
+    `<div class="analytics-grid"><section class="card section-card"><div class="section-head"><h2>Planned vs. Actual</h2><div class="legend"><span class="legend-item"><span class="legend-circle" style="background:#d9d0e9"></span>預計</span><span class="legend-item"><span class="legend-circle"></span>實際專注</span></div></div><p class="subhead" style="margin:-8px 0 10px">每日排定工作量與專注時間比較（時數）</p><div class="bar-chart">${daily.map((d,i)=>`<div class="bar-group"><div class="bar-duo"><div class="bar planned" style="height:${Math.max(2,d.planned/max*100)}%" data-tip="預計 ${fmt(d.planned)}" title="預計 ${fmt(d.planned)}"></div><div class="bar actual" style="height:${Math.max(2,d.actual/max*100)}%" data-tip="實際 ${fmt(Math.round(d.actual))}" title="實際 ${fmt(Math.round(d.actual))}"></div></div><span class="bar-day">${DAY_LABELS[i]}</span></div>`).join('')}</div></section>
+    <section class="card section-card"><div class="section-head"><h2>Project Performance</h2><span class="chip lav">本週</span></div>${sorted.length?sorted.map(({p,stat})=>`<div class="analytics-project"><div class="progress-row"><span><span class="project-dot" style="background:${color(p)}"></span> ${esc(p.name)}</span><strong>${pct(stat.pct)}</strong></div>${progressBar(stat.pct,'7px')}</div>`).join(''):empty('folder','暫無專案資料','建立專案並安排任務後，會顯示每個專案的進度。')}</section></div>`+
+    `<div class="analytics-grid" style="margin-top:19px"><section class="card section-card"><div class="section-head"><h2>Weekly Highlights</h2>${icon('sparkle',20)}</div><div class="project-metrics" style="justify-content:space-between"><div><strong>${fmt(info.remaining)}</strong><span>本週剩餘工作</span></div><div><strong>${sessions.length}</strong><span>專注次數</span></div><div><strong>${fmt(sessions.length?Math.round(info.focus/60000/sessions.length):0)}</strong><span>平均專注時間</span></div></div><div class="alert" style="margin-top:20px">${icon('info')} ${most.actual>0?`本週專注最久的一天是 ${dateText(most.day,{weekday:'long'})}，記錄了 ${fmt(Math.round(most.actual))}。`:'本週尚未有專注紀錄。開始專注後就能看見自己的活動趨勢。'} 專注時數與工作完成百分比是兩個不同指標。</div></section>
+    <section class="card section-card"><div class="section-head"><h2>Focus History</h2><span class="chip">${sessions.length} 筆</span></div>${sessions.length?sessions.slice().sort((a,b)=>b.endedAt.localeCompare(a.endedAt)).slice(0,6).map(s=>{let t=s.taskId?getTask(s.taskId):null;return `<div class="session-item"><div class="session-ico">${icon('timer',16)}</div><div class="label">${esc(t?.title||'自由專注')}<span>${dateText(isoDate(new Date(s.endedAt)),{month:'long',day:'numeric'})}</span></div><div class="duration">${fmt(Math.round(s.durationMs/60000))}</div></div>`}).join(''):empty('book','還沒有專注紀錄','專注完成後，時間就會出現在這裡。')}</section></div>`;
+  }
+  function renderSettings(){const s=state.settings;return heading('MAKE IT YOURS','Settings','調整專注節奏、管理資料，讓 Luma Planner 更符合你的習慣。')+
+    `${!storageOk?`<div class="alert warn" style="margin-bottom:20px">${icon('warning')} 瀏覽器儲存空間目前無法正常讀寫。修改可能無法保留，請儘快匯出 JSON 備份。</div>`:''}`+
+    `<div class="settings-grid"><section class="card settings-group"><h2>General Preferences</h2><p class="settings-sub">這些偏好會保存在目前的瀏覽器。</p><form class="settings-form" data-form="settings"><div class="field"><label for="settings-name">顯示名稱</label><input id="settings-name" name="displayName" maxlength="55" value="${esc(s.displayName||'')}" placeholder="例如：Vince" /></div><div class="divider" style="margin:1px 0"></div><h3>Pomodoro 計時設定</h3><div class="form-grid"><div class="field"><label for="settings-focus">專注分鐘</label><input id="settings-focus" type="number" min="1" max="240" step="1" name="focusMinutes" value="${Number(s.focusMinutes)||25}" required /></div><div class="field"><label for="settings-short">短休息分鐘</label><input id="settings-short" type="number" min="1" max="120" step="1" name="shortBreakMinutes" value="${Number(s.shortBreakMinutes)||5}" required /></div><div class="field"><label for="settings-long">長休息分鐘</label><input id="settings-long" type="number" min="1" max="180" step="1" name="longBreakMinutes" value="${Number(s.longBreakMinutes)||15}" required /></div><div class="field"><label for="settings-sound">完成提示音</label><select name="soundEnabled" id="settings-sound"><option value="on" ${s.soundEnabled?'selected':''}>開啟</option><option value="off" ${!s.soundEnabled?'selected':''}>關閉</option></select></div></div><button class="btn primary" type="submit" style="align-self:flex-start">${icon('save')} 儲存設定</button></form></section>
+    <section class="card settings-group"><h2>Data & Storage</h2><p class="settings-sub">所有資料預設只保存在這台裝置的瀏覽器裡。</p><div class="settings-actions"><div class="setting-action"><div><strong>Auto Save</strong><p>新增與修改資料時自動儲存</p></div><span class="chip ${storageOk?'green':'red'}">${storageOk?'● 已啟用':'● 異常'}</span></div><div class="setting-action"><div><strong>Export Data</strong><p>將專案、任務與專注紀錄下載成 JSON</p></div><button class="btn small" data-action="export">${icon('download',14)} 匯出</button></div><div class="setting-action"><div><strong>Import Data</strong><p>匯入 JSON 備份，會取代目前全部資料</p></div><button class="btn small" data-action="import">${icon('upload',14)} 匯入</button></div><div class="setting-action"><div><strong style="color:var(--red)">Clear All Data</strong><p>永久清空本機專案及紀錄（須再次確認）</p></div><button class="btn small danger" data-action="clear-all">${icon('trash',14)} 清除</button></div></div><div class="alert" style="margin-top:18px">${icon('info')} 在相同網址和瀏覽器正常重開時，資料通常會保留。清除網站資料、使用無痕模式或切換網址可能造成資料消失，建議定期匯出備份。</div></section></div>
+    <div class="card section-card" style="margin-top:19px"><div style="display:flex;align-items:center;gap:13px"><div class="brand-mark">${icon('sparkle',22)}</div><div><h3>Luma Planner <span class="muted" style="font-weight:500;font-size:12px">v1.0</span></h3><p class="subhead" style="margin-top:4px">Plan your week. Focus on what matters. · 單一 HTML、免登入、可部署 GitHub Pages。</p></div></div></div>`;}
+  // Modal windows, task forms and confirmations.
+  let pendingConfirm=null,timerRecoveryPending=false;
+  function openModal(type,data={}){modal={type,...data};drawModal();}
+  function closeModal(){if(modal?.type==='recovery'){recoverTimer(false);return;}modal=null;$('#modal-root').innerHTML='';}
+  function wrapModal(title,subtitle,body,footer='',large=false){return `<div class="modal-shell" data-overlay="true"><div class="modal ${large?'large':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-top"><div><h2>${title}</h2>${subtitle?`<p class="modal-description">${subtitle}</p>`:''}</div><button class="btn icon-btn small" data-action="modal-close" title="關閉">${icon('close')}</button></div>${body}${footer}</div></div>`;}
+  function modalFooter(inner){return `<div class="modal-footer">${inner}</div>`;}
+  function projectOptions(current=null){return state.projects.map(p=>`<option value="${p.id}" ${current===p.id?'selected':''}>${esc(p.name)}</option>`).join('');}
+  function drawModal(){if(!modal){$('#modal-root').innerHTML='';return;}const m=modal;let html='';
+    if(m.type==='project'){
+      let p=m.id?getProject(m.id):null;html=wrapModal(p?'編輯專案':'建立新專案','把課程、研究或重要計畫整理到同一個地方。',`<form id="project-form" data-form="project"><div class="form-grid"><div class="field full"><label for="project-name">專案名稱 *</label><input id="project-name" name="name" maxlength="150" required placeholder="例如：GRE Preparation" value="${esc(p?.name||'')}" /></div><div class="field full"><label for="project-desc">描述（選填）</label><textarea id="project-desc" name="description" maxlength="600" placeholder="簡單描述這個專案…">${esc(p?.description||'')}</textarea></div><div class="field full"><label for="project-color">專案色彩</label><select id="project-color" name="color">${PROJECT_COLORS.map((c,i)=>`<option value="${c}" ${(p?.color||PROJECT_COLORS[0])===c?'selected':''}>${['薰衣草紫','柔霧藍','鼠尾草綠','奶茶棕','霧玫瑰','灰紫'][i]}</option>`).join('')}</select></div></div>${modalFooter(`<button type="button" class="btn" data-action="modal-close">取消</button><button type="submit" class="btn primary">${icon('check',15)} ${p?'儲存修改':'建立專案'}</button>`)}</form>`);
+    } else if(m.type==='task'){
+      let t=m.id?getTask(m.id):m.duplicateId?getTask(m.duplicateId):null,editing=!!m.id,archived=editing&&t?.status==='carried_over',isDuplicate=!!m.duplicateId;
+      if(editing&&!t){closeModal();return;}const scheduled=isDuplicate?(m.date||today()):(m.date||t?.scheduledDate||today());let h=Math.floor((t?.estimatedMinutes||60)/60),mins=(t?.estimatedMinutes||60)%60;
+      html=wrapModal(archived?'歷史任務紀錄':editing?'任務詳細資訊':isDuplicate?'複製任務':'新增任務',archived?'剩餘工作已轉移到其他日期。為保留正確紀錄，此任務無法再編輯。':`安排某一天的工作，設定預計時長與完成進度。`,
+      `<form data-form="task"><div class="form-grid"><div class="field full"><label for="task-name">任務名稱 *</label><input id="task-name" name="title" maxlength="200" required placeholder="例如：GRE Reading" value="${esc(t?.title||'')}" ${archived?'disabled':''} /></div><div class="field"><label for="task-project">所屬專案 *</label><select id="task-project" name="projectId" required ${archived||t?.carriedFromId&&editing?'disabled':''}>${projectOptions(m.project||t?.projectId||state.projects[0]?.id)}</select></div><div class="field"><label for="task-date">安排日期 *</label><input id="task-date" type="date" name="scheduledDate" value="${scheduled}" required ${archived?'disabled':''} /></div><div class="field"><label for="task-hours">預估時數</label><input id="task-hours" type="number" min="0" max="999" step="1" name="hours" value="${h}" ${archived?'disabled':''} /></div><div class="field"><label for="task-minutes">分鐘 (0–59)</label><input id="task-minutes" type="number" min="0" max="59" step="1" name="minutes" value="${mins}" ${archived?'disabled':''} /></div><div class="field full"><label for="task-notes">備註（選填）</label><textarea id="task-notes" name="notes" maxlength="3000" placeholder="例如：讀完第 3 章、整理論文摘要…" ${archived?'disabled':''}>${esc(t?.notes||'')}</textarea></div></div>
+      ${editing?`<div class="progress-editor"><div class="progress-row"><strong>完成進度</strong><span class="percent" id="task-progress-label">${pct(t.progress)}</span></div><input class="slider" aria-label="完成進度" name="progress" type="range" min="0" max="100" step="1" value="${t.progress}" id="task-progress-slider" ${archived?'disabled':''}/>${progressBar(t.progress)}<p class="field-help">實際專注時間與手動完成度是不同的紀錄。</p></div><div class="detail-metrics"><div class="detail-metric"><strong>${fmt(t.estimatedMinutes)}</strong><span>原排定時間</span></div><div class="detail-metric"><strong>${fmt(Math.round(t.estimatedMinutes*(1-t.progress/100)))}</strong><span>估計剩餘</span></div><div class="detail-metric"><strong>${fmt(Math.round(focusMs(state.focusSessions.filter(s=>s.taskId===t.id))/60000))}</strong><span>實際專注</span></div></div><div class="detail-top" style="margin-top:18px">${taskBadge(t)}${t.carriedFromId?`<span class="chip lav">承接前次工作</span>`:''}${t.carriedToId?`<span class="chip amber">已建立後續任務</span>`:''}</div>`:''}
+      ${modalFooter(editing?`<button type="button" class="btn small danger" data-action="delete-task" data-id="${t.id}">${icon('trash',14)} 刪除</button><button type="button" class="btn small" data-action="duplicate-task" data-id="${t.id}">${icon('copy',14)} 複製</button>${t.status==='active'?`<button type="button" class="btn small" data-action="task-focus" data-id="${t.id}">${icon('play',14)} 專注</button><button type="button" class="btn small" data-action="carry-task" data-id="${t.id}">${icon('arrowRight',14)} 轉移</button>`:''}${!archived?`<button type="submit" class="btn primary small">${icon('save',14)} 儲存</button>`:''}`:`<button type="button" class="btn" data-action="modal-close">取消</button><button type="submit" class="btn primary">${icon('plus',15)} ${isDuplicate?'建立副本':'新增任務'}</button>`)}</form>`,true);
+    } else if(m.type==='carry'){
+      const t=getTask(m.id);if(!t||t.status!=='active'||t.progress>=100){closeModal();return;}const remaining=Math.max(1,Math.round(t.estimatedMinutes*(1-t.progress/100)));html=wrapModal('Carry Over · 延續剩餘工作','保留原日期的進度紀錄，新增一項任務承接尚未完成的部分。',`<div class="alert">${icon('info')} <span><strong>${esc(t.title)}</strong> · ${dateText(t.scheduledDate)} · 目前完成 ${pct(t.progress)}<br>原預估 ${fmt(t.estimatedMinutes)}，剩餘時間可自行調整。</span></div><form data-form="carry" style="margin-top:18px"><div class="form-grid"><div class="field"><label for="carry-minutes">剩餘預估時間（分鐘） *</label><input id="carry-minutes" type="number" name="remainingMinutes" min="1" max="59999" step="1" value="${remaining}" required /></div><div class="field"><label for="carry-date">移至日期 *</label><input id="carry-date" type="date" name="destinationDate" min="${dateOffset(t.scheduledDate,1)}" value="${dateOffset(t.scheduledDate,1)}" required /></div></div>${modalFooter(`<button type="button" class="btn" data-action="modal-close">取消</button><button type="submit" class="btn primary">${icon('arrowRight',15)} 確認轉移</button>`)}</form>`);
+    } else if(m.type==='goal'){
+      const p=getProject(m.id),w=selectedWeek;if(!p){closeModal();return;}const g=state.weeklyGoals.find(x=>x.projectId===p.id&&x.weekStart===w);html=wrapModal('本週專案目標',`${esc(p.name)} · ${dateRange(w)}`,`<form data-form="goal"><div class="field"><label for="weekly-goal-text">這週想完成什麼？</label><textarea id="weekly-goal-text" name="text" maxlength="1500" rows="5" placeholder="例如：完成閱讀練習、準備一份模擬考…">${esc(g?.text||'')}</textarea><span class="field-help">文字目標不影響任務時數或進度計算。</span></div>${modalFooter(`<button type="button" class="btn" data-action="modal-close">取消</button><button type="submit" class="btn primary">${icon('save',15)} 儲存目標</button>`)}</form>`);
+    } else if(m.type==='progress'){
+      const t=getTask(m.id);if(!t||t.status==='carried_over'){closeModal();return;}html=wrapModal('更新任務進度','專注紀錄已保存！現在可以手動更新進度，也可以稍後再處理。',`<div class="kicker">${icon('target')} ${esc(t.title)}</div><form data-form="progress"><div class="progress-editor"><div class="progress-row"><strong>目前完成度</strong><span class="percent" id="task-progress-label">${pct(t.progress)}</span></div><input class="slider" id="task-progress-slider" type="range" name="progress" min="0" max="100" step="1" value="${t.progress}" aria-label="完成進度" />${progressBar(t.progress)}</div>${modalFooter(`<button type="button" class="btn" data-action="modal-close">稍後再更新</button><button type="button" class="btn" data-action="progress-complete">${icon('checkcircle',15)} 標記完成</button><button type="submit" class="btn primary">儲存進度</button>`)}</form>`);
+    } else if(m.type==='finish'){
+      const t=timer(),remaining=t.mode==='pomodoro'&&t.stage==='focus'&&m.auto?t.plannedMs:elapsedTime(t);html=wrapModal('完成一段專注 ✦',`本次專注時長 ${fmtClock(remaining,true)}，要將它加入專注紀錄嗎？`,`<div class="alert">${icon('timer')} ${esc(getTask(t.taskId)?.title||'自由專注')} · 專注時間會計入 Analytics，但不會自動改變任務完成百分比。</div>${modalFooter(`<button class="btn" data-action="modal-close">返回計時器</button><button class="btn primary" data-action="finish-save">${icon('check',15)} 儲存專注紀錄</button>`)}`);
+    } else if(m.type==='breakDone'){
+      html=wrapModal('休息結束','準備好可以開始下一回合了。',`<div class="alert">${icon('sparkle')} 完成短暫休息後，下一輪仍可選擇同一項任務繼續專注。</div>${modalFooter(`<button class="btn" data-action="break-ready">稍後開始</button><button class="btn primary" data-action="break-start">${icon('play')} 開始下一輪</button>`)}`);
+    } else if(m.type==='recovery'){
+      const t=timer(),candidate=t.mode==='pomodoro'?Math.min(t.plannedMs,elapsedTime(t)):Math.min(elapsedTime(t),86400000);html=wrapModal('發現中斷的計時器','上次離開網站時還在計時。這段期間不會在未經確認下計入專注紀錄。',`<div class="alert warn">${icon('warning')} 如果離開期間沒有持續專注，建議捨棄；如果確實持續工作，可以保留已經過的時間並暫停計時器。<br>目前可恢復：${fmtClock(candidate,true)}</div>${modalFooter(`<button class="btn danger" data-action="recovery-discard">捨棄計時</button><button class="btn primary" data-action="recovery-keep">保留時間並暫停</button>`)}`);
+    } else if(m.type==='overdue'){
+      const list=state.tasks.filter(t=>t.status==='active'&&t.scheduledDate<today());html=wrapModal('尚未完成的過去任務','選擇一項任務查看詳細資料，或將剩餘工作移到新日期。',list.length?`<div class="task-list">${list.map(taskRow).join('')}</div>`:empty('checkcircle','已經沒有逾期任務','做得不錯！'));
+    } else if(m.type==='confirm'){
+      html=wrapModal(esc(m.title),esc(m.description||''),m.warning?`<div class="alert warn">${icon('warning')} ${esc(m.warning)}</div>`:'',modalFooter(`<button class="btn" data-action="modal-close">取消</button><button class="btn ${m.danger?'danger':'primary'}" data-action="confirm-yes">${esc(m.button||'確認')}</button>`));
+    }
+    $('#modal-root').innerHTML=html;const first=$('#modal-root input:not([disabled]),#modal-root textarea:not([disabled]),#modal-root select:not([disabled])');if(first&&m.type!=='recovery')first.focus({preventScroll:true});
+  }
+  function confirmDialog(title,description,onYes,options={}){pendingConfirm=onYes;openModal('confirm',{title,description,...options});}
+  function notify(message,type=''){const area=$('#toast-area');const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`${icon(type==='error'?'warning':type==='success'?'checkcircle':'info',17)} <span>${esc(message)}</span>`;area.appendChild(el);setTimeout(()=>el.remove(),4600);}
+  function formData(form){return Object.fromEntries(new FormData(form).entries());}
+  function handleForm(form){const type=form.dataset.form,d=formData(form);
+    try{
+      if(type==='project'){
+        const name=String(d.name||'').trim();if(!name)throw Error('請填寫專案名稱');const p=modal.id?getProject(modal.id):null;if(p){p.name=name;p.description=String(d.description||'').trim();p.color=PROJECT_COLORS.includes(d.color)?d.color:PROJECT_COLORS[0];}else state.projects.push({id:id(),name,description:String(d.description||'').trim(),color:PROJECT_COLORS.includes(d.color)?d.color:PROJECT_COLORS[0],createdAt:new Date().toISOString()});closeModal();commit(p?'專案已更新':'專案已建立');
+      }else if(type==='task'){
+        const edit=modal.id?getTask(modal.id):null;const name=String(d.title||'').trim();const projectId=d.projectId||edit?.projectId;const dt=d.scheduledDate;
+        const hours=Number(d.hours),minutes=Number(d.minutes);if(!name||!getProject(projectId)||!parseLocalDate(dt)||!Number.isInteger(hours)||!Number.isInteger(minutes)||hours<0||minutes<0||minutes>59)throw Error('請確認名稱、專案、日期及預估時數');const total=hours*60+minutes;if(total<1||total>59999)throw Error('預估時間需介於 1 至 59,999 分鐘');
+        if(edit?.status==='carried_over')throw Error('已轉移的歷史任務不能修改');if(edit?.carriedFromId){const prev=getTask(edit.carriedFromId);if(dt<=prev.scheduledDate)throw Error('承接任務的日期必須晚於前一筆任務');if(projectId!==edit.projectId)throw Error('承接任務不能變更所屬專案');}
+        let progress=edit?Number(d.progress):0;if(!Number.isFinite(progress))progress=0;progress=clamp(progress,0,100);
+        if(edit){Object.assign(edit,{title:name,projectId,scheduledDate:dt,estimatedMinutes:total,notes:String(d.notes||''),progress,status:progress>=100?'completed':'active',updatedAt:new Date().toISOString()});}else state.tasks.push({id:id(),projectId,title:name,scheduledDate:dt,estimatedMinutes:total,progress:0,notes:String(d.notes||''),status:'active',carriedFromId:null,carriedToId:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});closeModal();commit(edit?'任務已更新':'任務已新增');
+      }else if(type==='carry'){
+        const t=getTask(modal.id);if(!t||t.status!=='active'||t.progress>=100||t.carriedToId)throw Error('這個任務目前無法轉移');const destination=d.destinationDate,remaining=Number(d.remainingMinutes);if(!parseLocalDate(destination)||destination<=t.scheduledDate||!Number.isInteger(remaining)||remaining<1||remaining>59999)throw Error('請選擇原日期之後的有效日期與正確時間');const nextId=id();t.status='carried_over';t.carriedToId=nextId;t.updatedAt=new Date().toISOString();state.tasks.push({id:nextId,projectId:t.projectId,title:t.title,scheduledDate:destination,estimatedMinutes:remaining,progress:0,notes:t.notes,status:'active',carriedFromId:t.id,carriedToId:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});closeModal();commit(`剩餘工作已移至 ${dateText(destination)}`);
+      }else if(type==='goal'){
+        const p=getProject(modal.id);if(!p)throw Error('找不到專案');const text=String(d.text||'').trim(),w=selectedWeek;const g=state.weeklyGoals.find(g=>g.projectId===p.id&&g.weekStart===w);if(g){g.text=text;}else state.weeklyGoals.push({projectId:p.id,weekStart:w,text});closeModal();commit('本週目標已儲存');
+      }else if(type==='progress'){
+        const t=getTask(modal.id);if(!t||t.status==='carried_over')throw Error('無法修改此任務的進度');setTaskProgress(t,Number(d.progress));closeModal();commit('任務進度已更新');
+      }else if(type==='settings'){
+        const f=Number(d.focusMinutes),s=Number(d.shortBreakMinutes),l=Number(d.longBreakMinutes);if(!Number.isInteger(f)||f<1||f>240||!Number.isInteger(s)||s<1||s>120||!Number.isInteger(l)||l<1||l>180)throw Error('請輸入允許範圍內的計時分鐘數');state.settings={...state.settings,displayName:String(d.displayName||'').trim().slice(0,55),focusMinutes:f,shortBreakMinutes:s,longBreakMinutes:l,soundEnabled:d.soundEnabled==='on'};if(!timer().running&&elapsedTime(timer())===0&&timer().mode==='pomodoro')timer().plannedMs=(timer().stage==='focus'?f:timer().stage==='shortBreak'?s:l)*60000;commit('偏好設定已儲存');
+      }
+    }catch(e){notify(e.message||'操作失敗','error');}
+  }
+  function setTaskProgress(t,n){if(t.status==='carried_over')throw Error('歷史任務已鎖定');const v=Number(n);if(!Number.isFinite(v))throw Error('進度不正確');t.progress=clamp(v,0,100);t.status=t.progress===100?'completed':'active';t.updatedAt=new Date().toISOString();}
+  function linkedChain(t){let root=t,seen=new Set();while(root?.carriedFromId&&!seen.has(root.id)){seen.add(root.id);root=getTask(root.carriedFromId);}if(!root)throw Error('任務關聯損壞');let ids=new Set(),cur=root;while(cur&&!ids.has(cur.id)){ids.add(cur.id);cur=cur.carriedToId?getTask(cur.carriedToId):null;}return ids;}
+  function handleTaskDelete(taskId){let t=getTask(taskId);if(!t)return;const chain=linkedChain(t),msg=chain.size>1?`這項任務屬於一條包含 ${chain.size} 筆紀錄的 Carry Over 鏈。為了維持資料一致，會刪除整條任務鏈及其專注紀錄。`:'將刪除此任務及綁定的專注紀錄，操作無法復原。';confirmDialog('刪除任務？',msg,()=>{state.tasks=state.tasks.filter(x=>!chain.has(x.id));state.focusSessions=state.focusSessions.filter(x=>!chain.has(x.taskId));if(timer().taskId&&chain.has(timer().taskId))state.timerState=newTimer(timer().mode);closeModal();commit('任務已刪除');},{danger:true,button:'確認刪除',warning:'建議先匯出 JSON 備份。'});}
+  function handleProjectDelete(pid){const p=getProject(pid);if(!p)return;const count=state.tasks.filter(t=>t.projectId===pid).length;confirmDialog('刪除專案？',`將刪除「${p.name}」以及其 ${count} 筆任務、每週目標與相關專注紀錄，無法復原。`,()=>{const tIds=new Set(state.tasks.filter(t=>t.projectId===pid).map(t=>t.id));state.projects=state.projects.filter(q=>q.id!==pid);state.tasks=state.tasks.filter(t=>!tIds.has(t.id));state.weeklyGoals=state.weeklyGoals.filter(g=>g.projectId!==pid);state.focusSessions=state.focusSessions.filter(s=>!tIds.has(s.taskId));if(tIds.has(timer().taskId))state.timerState=newTimer(timer().mode);selectedProject=null;closeModal();commit('專案與相關資料已刪除');},{danger:true,button:'刪除專案',warning:'建議先匯出資料備份。'});}
+  function startTaskFocus(taskId){const t=getTask(taskId);if(!t||t.status!=='active'){notify('這個任務目前不能開始專注','error');return;}const cur=timer();if(cur.running){notify('請先結束目前的計時，才能切換任務','error');return;}if(elapsedTime(cur)>0&&cur.stage==='focus'){confirmDialog('切換專注任務？','計時器已有未儲存的時間，切換會捨棄目前計時。',()=>{state.timerState=newTimer(cur.mode,taskId);closeModal();view='focus';commit();},{button:'捨棄並切換'});return;}cur.taskId=taskId;cur.stage='focus';cur.elapsedBeforePauseMs=0;cur.running=false;cur.plannedMs=cur.mode==='pomodoro'?state.settings.focusMinutes*60000:0;closeModal();view='focus';commit();}
+  // Focus timer engine. Elapsed time is calculated from wall-clock timestamps, not interval ticks.
+  let timerEndLock=false;
+  function playPause(){const t=timer();if(t.running){t.elapsedBeforePauseMs=elapsedTime(t);t.startedAt=0;t.running=false;}else{if(t.mode==='pomodoro'&&t.elapsedBeforePauseMs>=t.plannedMs){notify('此回合已結束，請先完成紀錄或重設','error');return;}t.startedAt=Date.now();t.running=true;}persist();updateTimerDisplay();}
+  function resetTimer(){const t=timer();if(elapsedTime(t)>1000){confirmDialog('重設計時器？','目前這段尚未儲存的時間會被捨棄。',()=>{state.timerState={...newTimer(t.mode,t.taskId),cycles:t.cycles};closeModal();commit('計時器已重設');},{button:'確認重設'});return;}state.timerState={...newTimer(t.mode,t.taskId),cycles:t.cycles};commit();}
+  function stopTimer(){const t=timer();if(t.stage!=='focus'){notify('休息階段不會產生專注紀錄');return;}if(elapsedTime(t)<1000){notify('至少專注 1 秒後才能儲存');return;}t.elapsedBeforePauseMs=elapsedTime(t);t.startedAt=0;t.running=false;persist();openModal('finish',{auto:false});}
+  function promptTimerEnd(){if(timerEndLock||timerRecoveryPending)return;const t=timer();if(!t.running||t.mode!=='pomodoro'||elapsedTime(t)<t.plannedMs)return;timerEndLock=true;t.running=false;t.startedAt=0;t.elapsedBeforePauseMs=t.plannedMs;persist();playSound();if(t.stage==='focus')openModal('finish',{auto:true});else openModal('breakDone');timerEndLock=false;}
+  function playSound(){if(!state.settings.soundEnabled)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=new C();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=660;gain.gain.setValueAtTime(.025,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.24);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.25);osc.onended=()=>ctx.close();}catch(e){/* Sound may be blocked by browser autoplay rules. */}}
+  function advanceStage(auto){const t=timer(),mode=t.mode,taskId=t.taskId,cycles=t.cycles+(auto&&mode==='pomodoro'&&t.stage==='focus'?1:0);state.timerState=newTimer(mode,taskId);state.timerState.cycles=cycles;if(auto&&mode==='pomodoro'){let stage=cycles%4===0?'longBreak':'shortBreak';state.timerState.stage=stage;state.timerState.plannedMs=(stage==='longBreak'?state.settings.longBreakMinutes:state.settings.shortBreakMinutes)*60000;}}
+  function finishSave(){const t=timer(),auto=!!modal?.auto;if(t.stage!=='focus')return;let duration=Math.max(1000,auto&&t.mode==='pomodoro'?t.plannedMs:elapsedTime(t));duration=Math.min(duration,86400000);const taskId=t.taskId&&getTask(t.taskId)?t.taskId:null;state.focusSessions.push({id:id(),taskId,durationMs:Math.round(duration),endedAt:new Date().toISOString(),mode:t.mode});advanceStage(auto);closeModal();commit('專注時間已儲存');if(taskId&&getTask(taskId)?.status==='active')openModal('progress',{id:taskId});}
+  function endBreak(nextStart){const t=timer(),cycles=t.cycles,taskId=t.taskId;state.timerState=newTimer('pomodoro',taskId);state.timerState.cycles=cycles;if(nextStart){state.timerState.startedAt=Date.now();state.timerState.running=true;}closeModal();commit(nextStart?'下一輪專注開始':'休息結束，準備下一輪');}
+  function recoverTimer(keep){let t=timer();if(keep){t.elapsedBeforePauseMs=t.mode==='pomodoro'?Math.min(t.plannedMs,elapsedTime(t)):Math.min(elapsedTime(t),86400000);t.startedAt=0;t.running=false;}else state.timerState=newTimer(t.mode,t.taskId);timerRecoveryPending=false;modal=null;$('#modal-root').innerHTML='';commit(keep?'已暫停並恢復計時狀態':'已捨棄中斷計時');}
+  function exportJSON(){const file=new Blob([JSON.stringify(state,null,2)],{type:'application/json;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(file);link.download=`luma-planner-backup-${today()}.json`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),1500);notify('JSON 備份已下載','success');}
+  async function importJSON(file){if(!file)return;try{if(file.size>20*1024*1024)throw Error('備份檔案過大（上限 20MB）');const raw=await file.text(),candidate=validateData(JSON.parse(raw));confirmDialog('匯入備份並取代目前資料？','檔案驗證完成。匯入後目前所有專案、任務與專注紀錄會被新資料取代。',()=>{state=candidate;if(state.timerState?.running){state.timerState.running=false;state.timerState.startedAt=0;state.timerState.elapsedBeforePauseMs=0;}selectedProject=null;selectedWeek=weekStart(today());closeModal();commit('備份資料已成功匯入');},{warning:'建議先匯出目前的資料，避免覆蓋後無法復原。',button:'確認匯入'});}catch(e){notify(`無法匯入：${e.message}`,'error');}finally{$('#file-import').value='';}}
+  // Event delegation: elements are regenerated when switching pages, so handlers live on document.
+  document.addEventListener('click',event=>{
+    if(event.target.classList?.contains('modal-shell')&&event.target.dataset.overlay==='true'){closeModal();return;}
+    const el=event.target.closest('[data-action]');if(!el||el.disabled)return;const action=el.dataset.action,tid=el.dataset.id;
+    switch(action){
+      case 'navigate':view=el.dataset.view;closeModal();render();window.scrollTo({top:0,behavior:'instant'});break;
+      case 'go-planner':view='planner';selectedWeek=weekStart(today());render();break;
+      case 'add-project':openModal('project');break;
+      case 'edit-project':openModal('project',{id:tid});break;
+      case 'delete-project':handleProjectDelete(tid);break;
+      case 'add-task':if(!state.projects.length){notify('請先建立一個專案，再新增任務');openModal('project');}else openModal('task',{date:el.dataset.date||today(),project:el.dataset.project});break;
+      case 'task-detail':openModal('task',{id:tid});break;
+      case 'edit-goal':openModal('goal',{id:tid});break;
+      case 'project-details':selectedProject=selectedProject===tid?null:tid;render();break;
+      case 'toggle-complete':{
+        const t=getTask(tid);if(!t||t.status==='carried_over')break;setTaskProgress(t,t.status==='completed'?0:100);commit(t.status==='completed'?'任務已完成':'任務已設回進行中');break;
+      }
+      case 'duplicate-task':{
+        const t=getTask(tid);if(!t)return;openModal('task',{duplicateId:tid,date:today()});break;
+      }
+      case 'delete-task':handleTaskDelete(tid);break;
+      case 'carry-task':openModal('carry',{id:tid});break;
+      case 'task-focus':startTaskFocus(tid);break;
+      case 'week-prev':selectedWeek=dateOffset(selectedWeek,-7);selectedProject=null;render();break;
+      case 'week-next':selectedWeek=dateOffset(selectedWeek,7);selectedProject=null;render();break;
+      case 'week-today':selectedWeek=weekStart(today());selectedProject=null;render();break;
+      case 'open-overdue':openModal('overdue');break;
+      case 'modal-close':closeModal();break;
+      case 'confirm-yes':{const yes=pendingConfirm;pendingConfirm=null;if(typeof yes==='function')yes();break;}
+      case 'progress-complete':{const t=getTask(modal?.id);if(!t)break;setTaskProgress(t,100);closeModal();commit('任務已完成');break;}
+      case 'timer-play':playPause();break;
+      case 'timer-stop':stopTimer();break;
+      case 'timer-reset':resetTimer();break;
+      case 'timer-mode':{
+        const requested=el.dataset.mode,t=timer();if(requested===t.mode)break;
+        const switchMode=()=>{const taskId=t.taskId;state.timerState=newTimer(requested,taskId);closeModal();commit();};
+        if(elapsedTime(t)>1000){confirmDialog('切換計時模式？','目前尚未儲存的計時會被捨棄。',switchMode,{button:'確認切換'});}else switchMode();break;
+      }
+      case 'finish-save':finishSave();break;
+      case 'break-ready':endBreak(false);break;
+      case 'break-start':endBreak(true);break;
+      case 'recovery-keep':recoverTimer(true);break;
+      case 'recovery-discard':recoverTimer(false);break;
+      case 'export':exportJSON();break;
+      case 'import':$('#file-import').click();break;
+      case 'clear-all':confirmDialog('清除所有資料？','所有專案、任務、歷史紀錄、專注時間及設定都會被永久清除。',()=>{state=defaultState();selectedWeek=weekStart(today());selectedProject=null;view='dashboard';closeModal();commit('資料已清空');},{danger:true,button:'清空所有資料',warning:'此操作不可復原。建議先按「匯出」進行備份。'});break;
+    }
+  });
+  document.addEventListener('submit',event=>{const form=event.target.closest('form[data-form]');if(!form)return;event.preventDefault();handleForm(form);});
+  document.addEventListener('input',event=>{
+    if(event.target.id==='task-progress-slider'){
+      const value=Number(event.target.value),label=$('#task-progress-label'),bar=$('#modal-root .progress-fill');if(label)label.textContent=pct(value);if(bar)bar.style.width=clamp(value,0,100)+'%';
+    }
+  });
+  document.addEventListener('change',event=>{
+    if(event.target.id==='focus-task'){
+      const t=timer();if(t.running||elapsedTime(t)>0){notify('請先完成或重設目前的計時器，再切換任務','error');render();return;}
+      const taskId=event.target.value;t.taskId=taskId||null;persist();
+    }
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&modal){event.preventDefault();closeModal();return;}
+    if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('day-task')){event.preventDefault();openModal('task',{id:event.target.dataset.id});}
+  });
+  document.addEventListener('dragstart',event=>{
+    const target=event.target.closest('.day-task[draggable="true"]');if(target&&event.dataTransfer){event.dataTransfer.setData('text/plain',target.dataset.id);event.dataTransfer.effectAllowed='move';}
+  });
+  document.addEventListener('dragover',event=>{const col=event.target.closest('.day-column');if(col){event.preventDefault();event.dataTransfer.dropEffect='move';col.classList.add('drag-over');}});
+  document.addEventListener('dragleave',event=>{const col=event.target.closest('.day-column');if(col&&!col.contains(event.relatedTarget))col.classList.remove('drag-over');});
+  document.addEventListener('drop',event=>{
+    const col=event.target.closest('.day-column');document.querySelectorAll('.day-column.drag-over').forEach(e=>e.classList.remove('drag-over'));if(!col)return;event.preventDefault();const t=getTask(event.dataTransfer?.getData('text/plain'));if(!t||t.status!=='active')return;const dest=col.dataset.day;if(dest===t.scheduledDate)return;if(t.carriedFromId&&dest<=getTask(t.carriedFromId)?.scheduledDate){notify('承接任務的日期需晚於原始任務','error');return;}t.scheduledDate=dest;t.updatedAt=new Date().toISOString();commit(`已移動至 ${dateText(dest)}`);
+  });
+  $('#file-import').addEventListener('change',event=>importJSON(event.target.files?.[0]));
+  window.addEventListener('storage',event=>{if(event.key===STORAGE_KEY){try{if(event.newValue){state=validateData(JSON.parse(event.newValue));render();notify('已更新其他分頁的資料');}}catch(e){notify('其他分頁的資料格式無法讀取','error');}}});
+  setInterval(()=>{if(!timerRecoveryPending){promptTimerEnd();updateTimerDisplay();}},250);
+  // Initialize. No placeholder projects or demo tasks are inserted.
+  document.getElementById('brand-mark').innerHTML=icon('sparkle',24);
+  load();
+  if(!state.timerState)state.timerState=newTimer();
+  if(state.timerState.running)timerRecoveryPending=true;
+  render();
+  if(timerRecoveryPending)openModal('recovery');
+  </script>
+</body>
+</html>
